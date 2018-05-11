@@ -1,0 +1,73 @@
+#!/bin/bash
+
+a3filename=azimuth3
+
+get_usb() {
+	find /dev/disk -name "usb*" ! -name "*-part*"
+}
+
+gui() {
+	zenity "$@" 2> /dev/null
+}
+
+exit_if_not_zero() {
+	if [ ! $? -eq "0" ]; then
+		exit 0
+	fi
+}
+
+drives=($( get_usb ))
+
+while [ ! "$drives" ]; do
+	gui --error --title="USB-носитель не обнаружен" \
+		--text="Вставьте носитель в USB-порт, подождите несколько секунд и нажмите \"OK\"."
+
+	exit_if_not_zero
+
+	drives=($( get_usb ))
+done
+
+drives_gui=()
+
+for (( i = 0; i < ${#drives[*]}; ++i )); do
+	dev=$( readlink -e "${drives[i]}" )
+	drives_gui[i*4]=$( [ "$i" == 0 ] && echo "TRUE" || echo "FALSE" )
+	drives_gui[i*4 + 1]=$dev
+	drives_gui[i*4 + 2]=$( lsblk -n -l --output NAME,SIZE,TYPE | sed -rn "s/$( basename $dev )\s*(.*)\s*disk/\1/p" )
+	drives_gui[i*4 + 3]=$( basename "${drives[i]}" | cut -d "-" -f 2 | sed "s/_/ /g" )
+done
+
+burn=$(
+gui --list --radiolist --width=640 --height=360 --title="Выбор USB-носителя" \
+	--text="Выберите носитель для записи образа" \
+	--column="Выбор" --column="Устройство" --column="Размер" --column="Идентификатор" \
+	--print-column="2" \
+	"${drives_gui[@]}"
+)
+
+exit_if_not_zero
+
+a3image=$( gui --file-selection --file-filter="*.a3i" --title="Выберите образ Азимут 3" )
+
+exit_if_not_zero
+
+filesize=$(tar tfjv "$a3image" | grep "$a3filename" | cut -d " " -f 3)
+
+exit_if_not_zero
+
+lsblk -n -l --output NAME,TYPE,MOUNTPOINT | sed -rn "s/$( basename $burn )[0-9]*\s*part\s*(.*)/\1/p" | while read mount_point; do
+	if [ "$mount_point" ]; then
+		umount $mount_point
+	fi
+done
+
+gui --question --title="Подтверждение записи образа" \
+	--text="Вы уверены, что хотите записать образ <b>$a3image</b> на устройство <b>$burn</b>?"
+
+exit_if_not_zero
+
+tar xfjO "$a3image" "$a3filename" | ( pv -n -s "$filesize" | dd of=azimuth3.jpg bs=524288 ) 2>&1 | \
+	gui --progress --auto-kill --percentage=0 --title="Прогресс" \
+		--text="Происходит запись..."
+
+sync
