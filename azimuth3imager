@@ -1,9 +1,11 @@
 #!/bin/bash
 
-a3filename=azimuth3
+# Azimuth 3 image flasher by Al Korgun <korgun@tbdd.ru>
+
+a3filename=azimuth3image
 
 get_usb() {
-	find /dev/disk -name "usb*" ! -name "*-part*"
+	find /dev/disk/by-id -type l ! -name "*-part*"
 }
 
 gui() {
@@ -51,7 +53,7 @@ a3image=$( gui --file-selection --file-filter="*.a3i" --title="Выберите 
 
 exit_if_not_zero
 
-filesize=$(tar tfjv "$a3image" | grep "$a3filename" | cut -d " " -f 3)
+filesize=$( ./build/a3i-getsize "$a3image" )
 
 exit_if_not_zero
 
@@ -62,11 +64,11 @@ lsblk -n -l --output NAME,TYPE,MOUNTPOINT | sed -rn "s/$( basename $burn )[0-9]*
 done
 
 gui --question --title="Подтверждение записи образа" \
-	--text="Вы уверены, что хотите записать образ <b>$a3image</b> на устройство <b>$burn</b>?"
+	--text="Вы уверены, что хотите записать образ <b>$a3image</b> ($(( filesize / 1048576 ))mb) на устройство <b>$burn</b>?"
 
 exit_if_not_zero
 
-tar xfjO "$a3image" "$a3filename" | ( pv -n -s "$filesize" | dd of=azimuth3.jpg bs=524288 ) 2>&1 | \
+pkexec "$( pwd )/build/a3i-extract" "$a3image" "$burn" 2> /dev/stderr | \
 	gui --progress --auto-kill --percentage=0 --title="Прогресс" \
 		--text="Происходит запись..."
 
