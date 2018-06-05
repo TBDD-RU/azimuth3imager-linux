@@ -18,7 +18,7 @@ exit_if_not_zero() {
 	fi
 }
 
-drives=($( get_usb ))
+drives=( $( get_usb ) )
 
 while [ ! "$drives" ]; do
 	gui --error --title="USB-носитель не обнаружен" \
@@ -26,7 +26,7 @@ while [ ! "$drives" ]; do
 
 	exit_if_not_zero
 
-	drives=($( get_usb ))
+	drives=( $( get_usb ) )
 done
 
 drives_gui=()
@@ -53,7 +53,12 @@ a3image=$( gui --file-selection --file-filter="*.a3i" --title="Выберите 
 
 exit_if_not_zero
 
-filesize=$( ./build/a3i-getsize "$a3image" )
+filesize=$( /usr/local/bin/a3i-getsize "$a3image" )
+
+exit_if_not_zero # TODO: exit with message
+
+gui --question --title="Подтверждение записи образа" \
+	--text="Вы уверены, что хотите записать образ <b>$a3image</b> ($(( filesize / 1048576 ))mb) на устройство <b>$burn</b>?"
 
 exit_if_not_zero
 
@@ -63,12 +68,9 @@ lsblk -n -l --output NAME,TYPE,MOUNTPOINT | sed -rn "s/$( basename $burn )[0-9]*
 	fi
 done
 
-gui --question --title="Подтверждение записи образа" \
-	--text="Вы уверены, что хотите записать образ <b>$a3image</b> ($(( filesize / 1048576 ))mb) на устройство <b>$burn</b>?"
+exit_if_not_zero # TODO: exit with message
 
-exit_if_not_zero
-
-pkexec "$( pwd )/build/a3i-extract" "$a3image" "$burn" 2> /dev/stderr | \
+pkexec "/usr/local/bin/a3i-extract" "$a3image" "$burn" 2> /dev/stderr | \
 	gui --progress --auto-kill --percentage=0 --title="Прогресс" \
 		--text="Происходит запись..."
 
