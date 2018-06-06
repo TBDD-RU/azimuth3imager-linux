@@ -42,7 +42,7 @@ echo "Version: $VERSION" >> $TMP_DIR/DEBIAN/control
 
 echo "Creating package"
 
-fakeroot dpkg-deb --no-uniform-compression --build $TMP_DIR
+fakeroot dpkg-deb --build $TMP_DIR
 
 echo "Removing $TMP_DIR"
 
