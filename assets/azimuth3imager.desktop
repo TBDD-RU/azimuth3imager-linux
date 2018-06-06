@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Version=1.0
+Name=azimuth3imager
+Comment=Azimuth 3 image flasher
+Icon=tbdd-a3i
+Exec=/usr/local/bin/azimuth3imager
+StartupNotify=false

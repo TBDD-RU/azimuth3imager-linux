@@ -4,8 +4,8 @@
  * Author: Al Korgun <korgun@tbdd.ru>
  **/
 
-#include <inttypes.h>
-//#include <cmath>
+#include <cinttypes>
+#include <cstdio>
 #include <fstream>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>

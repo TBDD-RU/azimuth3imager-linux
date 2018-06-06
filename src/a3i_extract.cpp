@@ -4,8 +4,9 @@
  * Author: Al Korgun <korgun@tbdd.ru>
  **/
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <cmath>
+#include <cstdio>
 #include <fstream>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/bzip2.hpp>
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
 
 	//printf("%s %" PRIu64 "\n", header.name, size);
 
-	uint64_t progress; // percentage
+	uint64_t progress, last; // percentage
 
 	in.ignore(376); // unused end of tar header
 
@@ -57,7 +58,12 @@ int main(int argc, char *argv[]) {
 			progress = 100;
 		}
 
-		printf("%" PRIu64 "\n", progress);
+		if (progress != last) {
+			printf("%" PRIu64 "\n", progress);
+			fflush(stdout);
+
+			last = progress;
+		}
 	}
 
 	file.close();

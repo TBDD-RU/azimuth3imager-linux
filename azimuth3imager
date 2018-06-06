@@ -13,10 +13,22 @@ gui() {
 }
 
 exit_if_not_zero() {
-	if [ ! $? -eq "0" ]; then
-		exit 0
+	if [ $? -ne 0 ]; then
+		if [ "$@" ]; then
+			gui --info --title="Аварийное завершение работы" --text="$@"
+
+			exit 1
+		else
+			exit 0
+		fi
 	fi
 }
+
+# if [ $( id -u ) -ne 0 ]; then
+#	gui --info --title="Завершение работы" --text="Для корректной работы требуются права суперпользователя."
+
+#	exit 2
+# fi
 
 drives=( $( get_usb ) )
 
@@ -55,7 +67,7 @@ exit_if_not_zero
 
 filesize=$( /usr/local/bin/a3i-getsize "$a3image" )
 
-exit_if_not_zero # TODO: exit with message
+exit_if_not_zero "Проблема с извлечением размера образа из контейнера, вероятно он повреждён."
 
 gui --question --title="Подтверждение записи образа" \
 	--text="Вы уверены, что хотите записать образ <b>$a3image</b> ($(( filesize / 1048576 ))mb) на устройство <b>$burn</b>?"
@@ -65,12 +77,12 @@ exit_if_not_zero
 lsblk -n -l --output NAME,TYPE,MOUNTPOINT | sed -rn "s/$( basename $burn )[0-9]*\s*part\s*(.*)/\1/p" | while read mount_point; do
 	if [ "$mount_point" ]; then
 		umount $mount_point
+
+		exit_if_not_zero "Не удалось размонтировать все разделы носителя."
 	fi
 done
 
-exit_if_not_zero # TODO: exit with message
-
-pkexec "/usr/local/bin/a3i-extract" "$a3image" "$burn" 2> /dev/stderr | \
+pkexec /usr/local/bin/a3i-extract "$a3image" "$burn" | \
 	gui --progress --auto-kill --percentage=0 --title="Прогресс" \
 		--text="Происходит запись..."
 
