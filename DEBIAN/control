@@ -1,6 +1,6 @@
 Package: azimuth3imager
 Priority: optional
 Maintainer: Al Korgun <korgun@tbdd.ru>
-Architecture: all
+Architecture: amd64
 Description: Azimuth 3 image flasher
 Depends: zenity, policykit-1
